@@ -24,6 +24,7 @@ public class PracticeCore : MelonMod
     public override void OnSceneWasInitialized(int buildIndex, string sceneName)
     {
         PracticeMode.Forget();
+        RunIntegrity.BeginFreshAttempt("scene load");
         Log.Msg($"[scene] {sceneName}");
     }
 }

@@ -72,8 +72,11 @@ public static class PracticeMode
             return;
         }
 
-        if (CarState.TryRestore(slot.Value))
-            PracticeCore.Log.Msg("[practice] state restored");
+        if (!CarState.TryRestore(slot.Value))
+            return;
+
+        PracticeCore.Log.Msg("[practice] state restored");
+        RunIntegrity.MarkDirty("restored a saved state");
     }
 
     private static void DropSlotIfLevelChanged()

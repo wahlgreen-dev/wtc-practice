@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net6.0 because that is the runtime MelonLoader hosts mods on; see MelonLoader\net6. -->
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>WtcPractice</AssemblyName>
+    <!-- Path to the game install; override with -p:GameDir=... if it moves -->
+    <GameDir Condition="'$(GameDir)' == ''">D:\STEAM2\steamapps\common\WHAT THE CAR</GameDir>
+    <MlNet6>$(GameDir)\MelonLoader\net6</MlNet6>
+    <Il2CppAsm>$(GameDir)\MelonLoader\Il2CppAssemblies</Il2CppAsm>
+  </PropertyGroup>
+
+  <!-- MelonLoader / Il2CppInterop core references (present after install).
+       Private=false on every reference: these all live in the game folder already, and copying
+       them next to our DLL would put a second, stale copy of MelonLoader into Mods\. -->
+  <ItemGroup>
+    <Reference Include="MelonLoader">
+      <HintPath>$(MlNet6)\MelonLoader.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(MlNet6)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Il2CppInterop.Runtime">
+      <HintPath>$(MlNet6)\Il2CppInterop.Runtime.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Every generated IL2CPP game assembly (UnityEngine.*, Il2Cpp*, etc.). These do not exist
+       until MelonLoader has run the game once and generated them, so a clean machine must launch
+       the game before this project will compile. -->
+  <ItemGroup>
+    <Reference Include="$(Il2CppAsm)\*.dll" Condition="Exists('$(Il2CppAsm)')">
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Drop the built mod straight into the game so every build (CLI or Rider) is deployed.
+       WARNING: this copy fails silently while the game is running and holds a lock on the DLL,
+       and the build still reports "Build succeeded" - only MSB3021/3026/3027 warnings betray it.
+       run.ps1 closes the game first and then verifies the copy actually landed. -->
+  <Target Name="DeployToGame" AfterTargets="Build" Condition="Exists('$(GameDir)\Mods')">
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFolder="$(GameDir)\Mods"
+          ContinueOnError="WarnAndContinue" />
+    <Message Importance="high" Text="Deployed $(TargetFileName) -> $(GameDir)\Mods" />
+  </Target>
+
+</Project>

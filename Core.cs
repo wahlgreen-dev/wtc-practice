@@ -13,12 +13,17 @@ public class PracticeCore : MelonMod
     public override void OnInitializeMelon()
     {
         Log = LoggerInstance;
-        Log.Msg($"[practice] {PracticeMode.SaveKey} saves, {PracticeMode.RestoreKey} restores");
+        Log.Msg($"[practice] {PracticeMode.SaveKey} saves, {PracticeMode.RestoreKey} restores, {PracticeMode.ToggleHudKey} toggles the HUD");
     }
 
     public override void OnUpdate()
     {
         PracticeMode.Tick();
+    }
+
+    public override void OnGUI()
+    {
+        PracticeHud.Draw(LevelWorld.InLevel);
     }
 
     public override void OnSceneWasInitialized(int buildIndex, string sceneName)

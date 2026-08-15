@@ -6,6 +6,7 @@ public static class PracticeMode
 {
     public const Key SaveKey = Key.Digit1;
     public const Key RestoreKey = Key.Digit2;
+    public const Key ToggleHudKey = Key.F1;
 
     private static CarSnapshot? slot;
 
@@ -22,6 +23,9 @@ public static class PracticeMode
 
         if (keyboard[RestoreKey].wasPressedThisFrame)
             RestoreState();
+
+        if (keyboard[ToggleHudKey].wasPressedThisFrame)
+            PracticeHud.Toggle();
     }
 
     public static void Forget()

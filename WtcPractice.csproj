@@ -1,21 +1,56 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- net6.0 because that is the runtime MelonLoader hosts mods on; see MelonLoader\net6. -->
     <TargetFramework>net6.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>WtcPractice</AssemblyName>
-    <!-- Path to the game install; override with -p:GameDir=... if it moves -->
-    <GameDir Condition="'$(GameDir)' == ''">D:\STEAM2\steamapps\common\WHAT THE CAR</GameDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GameDir)' == ''">
+    <GameDir>$(WTC_GAME_DIR)</GameDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GameDir)' == '' And '$(OS)' == 'Windows_NT'">
+    <_SteamHklm>$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Valve\Steam@InstallPath)</_SteamHklm>
+    <_SteamHkcu>$(registry:HKEY_CURRENT_USER\SOFTWARE\Valve\Steam@SteamPath)</_SteamHkcu>
+    <_Cand1>$(_SteamHklm)\steamapps\common\WHAT THE CAR</_Cand1>
+    <_Cand2>$(_SteamHkcu)\steamapps\common\WHAT THE CAR</_Cand2>
+    <_Cand3>C:\Program Files (x86)\Steam\steamapps\common\WHAT THE CAR</_Cand3>
+
+    <GameDir Condition="'$(_SteamHklm)' != '' And Exists('$(_Cand1)')">$(_Cand1)</GameDir>
+    <GameDir Condition="'$(GameDir)' == '' And '$(_SteamHkcu)' != '' And Exists('$(_Cand2)')">$(_Cand2)</GameDir>
+    <GameDir Condition="'$(GameDir)' == '' And Exists('$(_Cand3)')">$(_Cand3)</GameDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <MlNet6>$(GameDir)\MelonLoader\net6</MlNet6>
     <Il2CppAsm>$(GameDir)\MelonLoader\Il2CppAssemblies</Il2CppAsm>
   </PropertyGroup>
 
-  <!-- MelonLoader / Il2CppInterop core references (present after install).
-       Private=false on every reference: these all live in the game folder already, and copying
-       them next to our DLL would put a second, stale copy of MelonLoader into Mods\. -->
+  <Target Name="CheckGameSetup" BeforeTargets="ResolveAssemblyReferences">
+    <Error
+      Condition="'$(GameDir)' == ''"
+      Text="Could not find WHAT THE CAR (only Steam's default library is autodetected). Set the game folder with -p:GameDir=&quot;X:\path\to\WHAT THE CAR&quot; or by setting the WTC_GAME_DIR environment variable." />
+
+    <Error
+      Condition="!Exists('$(GameDir)\GameAssembly.dll')"
+      Text="GameDir is '$(GameDir)' but there is no GameAssembly.dll in it, so that is not a WHAT THE CAR install. Point GameDir at the folder that contains WHATTHECAR.exe." />
+
+    <Error
+      Condition="!Exists('$(MlNet6)\MelonLoader.dll')"
+      Text="MelonLoader is not installed in '$(GameDir)'. Install it with the MelonLoader installer (https://github.com/LavaGang/MelonLoader.Installer/releases), then launch the game once so it can generate its Il2Cpp assemblies." />
+
+    <ItemGroup>
+      <_Il2CppProbe Include="$(Il2CppAsm)\*.dll" />
+    </ItemGroup>
+
+    <Error
+      Condition="'@(_Il2CppProbe)' == ''"
+      Text="MelonLoader is installed in '$(GameDir)' but has not generated its Il2Cpp assemblies yet ('$(Il2CppAsm)' is missing or empty). Launch the game once, wait for MelonLoader to finish generating, then close it and build again." />
+  </Target>
+
   <ItemGroup>
     <Reference Include="MelonLoader">
       <HintPath>$(MlNet6)\MelonLoader.dll</HintPath>
@@ -31,24 +66,27 @@
     </Reference>
   </ItemGroup>
 
-  <!-- Every generated IL2CPP game assembly (UnityEngine.*, Il2Cpp*, etc.). These do not exist
-       until MelonLoader has run the game once and generated them, so a clean machine must launch
-       the game before this project will compile. -->
   <ItemGroup>
     <Reference Include="$(Il2CppAsm)\*.dll" Condition="Exists('$(Il2CppAsm)')">
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
-  <!-- Drop the built mod straight into the game so every build (CLI or Rider) is deployed.
-       WARNING: this copy fails silently while the game is running and holds a lock on the DLL,
-       and the build still reports "Build succeeded" - only MSB3021/3026/3027 warnings betray it.
-       run.ps1 closes the game first and then verifies the copy actually landed. -->
-  <Target Name="DeployToGame" AfterTargets="Build" Condition="Exists('$(GameDir)\Mods')">
-    <Copy SourceFiles="$(TargetPath)"
-          DestinationFolder="$(GameDir)\Mods"
-          ContinueOnError="WarnAndContinue" />
-    <Message Importance="high" Text="Deployed $(TargetFileName) -> $(GameDir)\Mods" />
+  <Target Name="DeployToGame" AfterTargets="Build">
+    <Warning
+      Condition="!Exists('$(GameDir)\Mods')"
+      Text="'$(GameDir)\Mods' does not exist, so the mod was NOT deployed." />
+
+    <Copy
+      Condition="Exists('$(GameDir)\Mods')"
+      SourceFiles="$(TargetPath)"
+      DestinationFolder="$(GameDir)\Mods"
+      ContinueOnError="WarnAndContinue" />
+
+    <Message
+      Condition="Exists('$(GameDir)\Mods')"
+      Importance="high"
+      Text="Deployed $(TargetFileName) -> $(GameDir)\Mods" />
   </Target>
 
 </Project>

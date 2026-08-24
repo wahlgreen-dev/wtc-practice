@@ -1,8 +1,6 @@
-# Build output. The DLL is deployed into the game by the DeployToGame target,
-# so there is never a reason to track it here.
 bin/
 obj/
-
-# Rider / ReSharper per-user state.
 .idea/
 *.DotSettings.user
+dist/
+.cache/

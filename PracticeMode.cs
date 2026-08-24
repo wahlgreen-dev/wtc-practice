@@ -41,7 +41,7 @@ public static class PracticeMode
             return;
         }
 
-        string levelId = LevelWorld.ContentId;
+        string levelId = LevelWorld.GetContentId();
         if (string.IsNullOrEmpty(levelId))
         {
             PracticeCore.Log.Warning("[practice] level not found yet");
@@ -70,7 +70,7 @@ public static class PracticeMode
             return;
         }
 
-        if (!slot.Value.Matches(LevelWorld.ContentId))
+        if (!slot.Value.Matches(LevelWorld.GetContentId()))
         {
             PracticeCore.Log.Msg($"[practice] saved state belongs to {slot.Value.LevelId}");
             return;
@@ -88,7 +88,7 @@ public static class PracticeMode
         if (!slot.HasValue)
             return;
 
-        string levelId = LevelWorld.ContentId;
+        string levelId = LevelWorld.GetContentId();
         if (string.IsNullOrEmpty(levelId) || slot.Value.Matches(levelId))
             return;
 

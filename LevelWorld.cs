@@ -4,7 +4,7 @@ using Object = UnityEngine.Object;
 
 namespace WtcPractice;
 
-public static class  LevelWorld
+public static class LevelWorld
 {
     private static LevelGameplayState gameplay;
 
@@ -14,22 +14,23 @@ public static class  LevelWorld
 
     public static bool InLevel => Flow != null && Flow.isInLevel;
 
-    public static string ContentId
+    private static bool EnsureGameplay()
     {
-        get
-        {
-            if (!InLevel)
-                return null;
+        if (gameplay == null)
+            gameplay = Object.FindObjectOfType<LevelGameplayState>();
 
-            if (gameplay == null)
-                gameplay = Object.FindObjectOfType<LevelGameplayState>();
+        return gameplay != null;
+    }
 
-            if (gameplay == null)
-                return null;
+    public static string GetContentId()
+    {
+        if (!InLevel)
+            return null;
 
-            LevelInstance level = gameplay.level;
-            return level == null ? null : level.contentId;
-        }
+        if (!EnsureGameplay())
+            return null;
+
+        return gameplay.level?.contentId;
     }
 
     public static void Forget() => gameplay = null;

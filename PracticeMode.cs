@@ -47,6 +47,7 @@ public static class PracticeMode
     {
         LevelWorld.Forget();
         PracticeCamera.Forget();
+        PracticeHud.ClearStatus();
     }
 
     private static void SaveState()
@@ -75,6 +76,7 @@ public static class PracticeMode
             return;
 
         slot = captured;
+        PracticeHud.Say("Checkpoint set");
         PracticeCore.Log.Msg("[practice] checkpoint set");
     }
 
@@ -110,6 +112,7 @@ public static class PracticeMode
         LevelWorld.SetTime(slot.Value.Time);
         pendingWarp = warp;
 
+        PracticeHud.Say("Teleported");
         PracticeCore.Log.Msg("[practice] teleported to checkpoint");
         RunIntegrity.MarkDirty("teleported to a checkpoint");
     }

@@ -40,7 +40,7 @@ function Get-ModVersion {
     $found = [regex]::Match((Get-Content $coreCs -Raw), $pattern)
 
     if (-not $found.Success) {
-        throw "Could not read the mod version from the MelonInfo attribute in $coreCs."
+        throw "No MelonInfo version in $coreCs"
     }
 
     return $found.Groups[1].Value
@@ -79,7 +79,7 @@ function Get-PinnedArchive {
 
     if ($actual -ne $Sha256) {
         Remove-Item $archive -Force
-        throw "$Name $Version hash mismatch. Expected $Sha256, got $actual. The cached copy has been deleted; re-run to download it again."
+        throw "$Name $Version hash mismatch, expected $Sha256 got $actual"
     }
 
     Write-Host "  $Name $Version ok"
@@ -116,7 +116,7 @@ function Confirm-StagedPayload {
     }
 
     if (Test-Path (Join-Path $StageDir 'MelonLoader\Il2CppAssemblies')) {
-        throw "Staged payload contains Il2CppAssemblies, which are machine-specific and must not be redistributed."
+        throw "Staged payload contains Il2CppAssemblies"
     }
 }
 
@@ -150,7 +150,7 @@ if (-not $SkipBuild) {
 }
 
 if (-not (Test-Path $ModDll)) {
-    throw "Built mod not found at $ModDll. Run without -SkipBuild."
+    throw "No built mod at $ModDll"
 }
 
 Write-Host "Resolving pinned payload..."

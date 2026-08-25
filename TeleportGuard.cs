@@ -6,34 +6,42 @@ namespace WtcPractice;
 
 public readonly struct TeleportGuard : IDisposable
 {
-    private readonly List<Rigidbody> bodies;
-    private readonly List<RigidbodyInterpolation> interpolations;
-    private readonly List<CollisionDetectionMode> collisions;
+    private readonly List<Held> held;
 
     public TeleportGuard(Rigidbody main, List<Rigidbody> parts)
     {
-        bodies = new List<Rigidbody>(parts.Count + 1) { main };
-        bodies.AddRange(parts);
+        held = new List<Held>(parts.Count + 1) { new(main) };
 
-        interpolations = new List<RigidbodyInterpolation>(bodies.Count);
-        collisions = new List<CollisionDetectionMode>(bodies.Count);
+        foreach (Rigidbody part in parts)
+            held.Add(new Held(part));
 
-        foreach (Rigidbody body in bodies)
+        foreach (Held body in held)
         {
-            interpolations.Add(body.interpolation);
-            collisions.Add(body.collisionDetectionMode);
-
-            body.interpolation = RigidbodyInterpolation.None;
-            body.collisionDetectionMode = CollisionDetectionMode.Discrete;
+            body.Body.interpolation = RigidbodyInterpolation.None;
+            body.Body.collisionDetectionMode = CollisionDetectionMode.Discrete;
         }
     }
 
     public void Dispose()
     {
-        for (int i = 0; i < bodies.Count; i++)
+        foreach (Held body in held)
         {
-            bodies[i].interpolation = interpolations[i];
-            bodies[i].collisionDetectionMode = collisions[i];
+            body.Body.interpolation = body.Interpolation;
+            body.Body.collisionDetectionMode = body.Collision;
+        }
+    }
+
+    private readonly struct Held
+    {
+        public readonly Rigidbody Body;
+        public readonly RigidbodyInterpolation Interpolation;
+        public readonly CollisionDetectionMode Collision;
+
+        public Held(Rigidbody body)
+        {
+            Body = body;
+            Interpolation = body.interpolation;
+            Collision = body.collisionDetectionMode;
         }
     }
 }

@@ -32,15 +32,15 @@
   <Target Name="CheckGameSetup" BeforeTargets="ResolveAssemblyReferences">
     <Error
       Condition="'$(GameDir)' == ''"
-      Text="Could not find WHAT THE CAR (only Steam's default library is autodetected). Set the game folder with -p:GameDir=&quot;X:\path\to\WHAT THE CAR&quot; or by setting the WTC_GAME_DIR environment variable." />
+      Text="Could not find WHAT THE CAR. Set GameDir or WTC_GAME_DIR." />
 
     <Error
       Condition="!Exists('$(GameDir)\GameAssembly.dll')"
-      Text="GameDir is '$(GameDir)' but there is no GameAssembly.dll in it, so that is not a WHAT THE CAR install. Point GameDir at the folder that contains WHATTHECAR.exe." />
+      Text="No GameAssembly.dll in '$(GameDir)'." />
 
     <Error
       Condition="!Exists('$(MlNet6)\MelonLoader.dll')"
-      Text="MelonLoader is not installed in '$(GameDir)'. Install it with the MelonLoader installer (https://github.com/LavaGang/MelonLoader.Installer/releases), then launch the game once so it can generate its Il2Cpp assemblies." />
+      Text="MelonLoader not installed in '$(GameDir)'." />
 
     <ItemGroup>
       <_Il2CppProbe Include="$(Il2CppAsm)\*.dll" />
@@ -48,7 +48,7 @@
 
     <Error
       Condition="'@(_Il2CppProbe)' == ''"
-      Text="MelonLoader is installed in '$(GameDir)' but has not generated its Il2Cpp assemblies yet ('$(Il2CppAsm)' is missing or empty). Launch the game once, wait for MelonLoader to finish generating, then close it and build again." />
+      Text="No Il2Cpp assemblies in '$(Il2CppAsm)'. Run the game once." />
   </Target>
 
   <ItemGroup>
@@ -75,7 +75,7 @@
   <Target Name="DeployToGame" AfterTargets="Build">
     <Warning
       Condition="!Exists('$(GameDir)\Mods')"
-      Text="'$(GameDir)\Mods' does not exist, so the mod was NOT deployed." />
+      Text="No Mods folder in '$(GameDir)', not deployed." />
 
     <Copy
       Condition="Exists('$(GameDir)\Mods')"

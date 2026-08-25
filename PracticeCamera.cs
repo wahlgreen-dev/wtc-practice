@@ -13,9 +13,17 @@ public static class PracticeCamera
 
     public static void OnCarWarped(Vector3 delta)
     {
-        ResetFollows();
-        NotifyCinemachine(delta);
-        Reposition();
+        if (EnsureVehicle())
+        {
+            vehicle.ResetCameraFollows();
+            Warp(vehicle.follow, delta);
+
+            if (vehicle.lookAt != vehicle.follow)
+                Warp(vehicle.lookAt, delta);
+        }
+
+        if (EnsureController())
+            controller.InstantlyReposition();
     }
 
     public static void Forget()
@@ -24,33 +32,10 @@ public static class PracticeCamera
         vehicle = null;
     }
 
-    private static void ResetFollows()
-    {
-        if (EnsureVehicle())
-            vehicle.ResetCameraFollows();
-    }
-
-    private static void NotifyCinemachine(Vector3 delta)
-    {
-        if (!EnsureVehicle())
-            return;
-
-        Warp(vehicle.follow, delta);
-
-        if (vehicle.lookAt != vehicle.follow)
-            Warp(vehicle.lookAt, delta);
-    }
-
     private static void Warp(Transform target, Vector3 delta)
     {
         if (target != null)
             CinemachineCore.Instance.OnTargetObjectWarped(target, delta);
-    }
-
-    private static void Reposition()
-    {
-        if (EnsureController())
-            controller.InstantlyReposition();
     }
 
     private static bool EnsureController()

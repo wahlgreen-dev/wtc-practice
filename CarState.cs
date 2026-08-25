@@ -74,7 +74,7 @@ public static class CarState
 
         if (snapshot.Parts.Length != parts.Count)
         {
-            PracticeCore.Log.Warning($"[car] the car changed since the checkpoint ({snapshot.Parts.Length} parts then, {parts.Count} now), only the main body was moved");
+            PracticeCore.Log.Warning($"[car] car changed since the checkpoint ({snapshot.Parts.Length} parts, now {parts.Count}), moved the main body only");
             return;
         }
 

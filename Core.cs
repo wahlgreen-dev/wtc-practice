@@ -1,7 +1,7 @@
 using MelonLoader;
 
 
-[assembly: MelonInfo(typeof(WtcPractice.PracticeCore), "WTC Practice", "0.1.0", "wahlgreen.dev")]
+[assembly: MelonInfo(typeof(WtcPractice.PracticeCore), "WTC Practice", "0.2.0", "wahlgreen.dev")]
 [assembly: MelonGame("Triband", "WHATTHECAR")]
 
 namespace WtcPractice;
@@ -13,7 +13,7 @@ public class PracticeCore : MelonMod
     public override void OnInitializeMelon()
     {
         Log = LoggerInstance;
-        Log.Msg($"[practice] {PracticeMode.SaveKey} saves, {PracticeMode.RestoreKey} restores, {PracticeMode.ToggleHudKey} toggles the HUD");
+        Log.Msg($"[practice] {PracticeMode.SaveKey} sets a checkpoint, {PracticeMode.RestoreKey} teleports back, {PracticeMode.ToggleHudKey} toggles the HUD");
     }
 
     public override void OnUpdate()
@@ -21,15 +21,19 @@ public class PracticeCore : MelonMod
         PracticeMode.Tick();
     }
 
+    public override void OnLateUpdate()
+    {
+        PracticeMode.LateTick();
+    }
+
     public override void OnGUI()
     {
-        PracticeHud.Draw(LevelWorld.InLevel);
+        PracticeHud.Draw(PracticeMode.CanPractice);
     }
 
     public override void OnSceneWasInitialized(int buildIndex, string sceneName)
     {
         PracticeMode.Forget();
         RunIntegrity.BeginFreshAttempt("scene load");
-        Log.Msg($"[scene] {sceneName}");
     }
 }

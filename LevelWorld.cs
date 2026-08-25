@@ -33,5 +33,47 @@ public static class LevelWorld
         return gameplay.level?.contentId;
     }
 
+    public static bool IsTimerRunning()
+    {
+        LevelTimer timer = GetTimer();
+
+        if (timer == null)
+            return false;
+
+        return timer._running;
+    }
+
+    public static float GetTime()
+    {
+        LevelTimer timer = GetTimer();
+
+        if (timer == null)
+            return 0f;
+
+        return timer.time;
+    }
+
+    public static bool SetTime(float time)
+    {
+        LevelTimer timer = GetTimer();
+
+        if (timer == null)
+            return false;
+
+        timer.time = time;
+        return true;
+    }
+
+    private static LevelTimer GetTimer()
+    {
+        if (!InLevel)
+            return null;
+
+        if (!EnsureGameplay())
+            return null;
+
+        return gameplay._levelTimer;
+    }
+
     public static void Forget() => gameplay = null;
 }

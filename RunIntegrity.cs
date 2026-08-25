@@ -15,7 +15,7 @@ public static class RunIntegrity
 
         IsDirty = true;
         Reason = reason;
-        PracticeCore.Log?.Msg($"[integrity] run invalidated — {reason}");
+        PracticeCore.Log?.Msg($"[integrity] run invalidated: {reason}");
     }
 
     public static void BeginFreshAttempt(string cause)
@@ -25,7 +25,7 @@ public static class RunIntegrity
 
         IsDirty = false;
         Reason = null;
-        PracticeCore.Log?.Msg($"[integrity] clean again — {cause}");
+        PracticeCore.Log?.Msg($"[integrity] clean again: {cause}");
     }
 
     public static bool Blocks(string what)
@@ -35,7 +35,7 @@ public static class RunIntegrity
             if (!IsDirty)
                 return false;
 
-            PracticeCore.Log?.Msg($"[integrity] blocked {what} — {Reason}");
+            PracticeCore.Log?.Msg($"[integrity] blocked {what}: {Reason}");
             return true;
         }
         catch (Exception e)

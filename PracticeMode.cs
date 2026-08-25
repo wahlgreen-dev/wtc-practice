@@ -1,3 +1,4 @@
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace WtcPractice;
@@ -9,9 +10,23 @@ public static class PracticeMode
     public const Key ToggleHudKey = Key.F1;
 
     private static CarSnapshot? slot;
+    private static Vector3? pendingWarp;
+
+    public static void LateTick()
+    {
+        if (!pendingWarp.HasValue)
+            return;
+
+        PracticeCamera.OnCarWarped(pendingWarp.Value);
+        pendingWarp = null;
+    }
+
+    public static bool CanPractice { get; private set; }
 
     public static void Tick()
     {
+        CanPractice = LevelWorld.IsTimerRunning();
+
         DropSlotIfLevelChanged();
 
         Keyboard keyboard = Keyboard.current;
@@ -31,6 +46,7 @@ public static class PracticeMode
     public static void Forget()
     {
         LevelWorld.Forget();
+        PracticeCamera.Forget();
     }
 
     private static void SaveState()
@@ -41,6 +57,12 @@ public static class PracticeMode
             return;
         }
 
+        if (!LevelWorld.IsTimerRunning())
+        {
+            PracticeCore.Log.Msg("[practice] wait until the launch is done");
+            return;
+        }
+
         string levelId = LevelWorld.GetContentId();
         if (string.IsNullOrEmpty(levelId))
         {
@@ -48,12 +70,12 @@ public static class PracticeMode
             return;
         }
 
-        CarSnapshot? captured = CarState.TryCapture(levelId);
+        CarSnapshot? captured = CarState.TryCapture(levelId, LevelWorld.GetTime());
         if (!captured.HasValue)
             return;
 
         slot = captured;
-        PracticeCore.Log.Msg("[practice] state saved");
+        PracticeCore.Log.Msg("[practice] checkpoint set");
     }
 
     private static void RestoreState()
@@ -64,23 +86,32 @@ public static class PracticeMode
             return;
         }
 
+        if (!LevelWorld.IsTimerRunning())
+        {
+            PracticeCore.Log.Msg("[practice] wait until the launch is done");
+            return;
+        }
+
         if (!slot.HasValue)
         {
-            PracticeCore.Log.Msg($"[practice] nothing saved — press {SaveKey} first");
+            PracticeCore.Log.Msg($"[practice] no checkpoint yet, press {SaveKey} first");
             return;
         }
 
         if (!slot.Value.Matches(LevelWorld.GetContentId()))
         {
-            PracticeCore.Log.Msg($"[practice] saved state belongs to {slot.Value.LevelId}");
+            PracticeCore.Log.Msg($"[practice] checkpoint belongs to {slot.Value.LevelId}");
             return;
         }
 
-        if (!CarState.TryRestore(slot.Value))
+        if (!CarState.TryRestore(slot.Value, out Vector3 warp))
             return;
 
-        PracticeCore.Log.Msg("[practice] state restored");
-        RunIntegrity.MarkDirty("restored a saved state");
+        LevelWorld.SetTime(slot.Value.Time);
+        pendingWarp = warp;
+
+        PracticeCore.Log.Msg("[practice] teleported to checkpoint");
+        RunIntegrity.MarkDirty("teleported to a checkpoint");
     }
 
     private static void DropSlotIfLevelChanged()
@@ -92,7 +123,7 @@ public static class PracticeMode
         if (string.IsNullOrEmpty(levelId) || slot.Value.Matches(levelId))
             return;
 
-        PracticeCore.Log.Msg($"[practice] left {slot.Value.LevelId} — saved state dropped");
+        PracticeCore.Log.Msg($"[practice] left {slot.Value.LevelId}, checkpoint dropped");
         slot = null;
     }
 }

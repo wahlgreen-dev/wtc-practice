@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Il2Cpp;
 using Il2CppSpeed.Level;
 using UnityEngine;
@@ -7,7 +8,7 @@ namespace WtcPractice;
 
 public static class CarState
 {
-    public static CarSnapshot? TryCapture(string levelId)
+    public static CarSnapshot? TryCapture(string levelId, float time)
     {
         if (!TryFindCar(out ThisIsThePlayerVehicle vehicle, out Rigidbody body))
             return null;
@@ -15,28 +16,93 @@ public static class CarState
         DampedSteering steering = vehicle.steering;
         Vector3 steerDir = steering == null ? body.transform.forward : steering.currDir;
 
-        var snapshot = new CarSnapshot(levelId, body.position, body.rotation, body.velocity, body.angularVelocity, steerDir);
-
-        PracticeCore.Log.Msg($"[capture] {snapshot.Describe()} (rb {body.GetInstanceID()})");
-        return snapshot;
+        return new CarSnapshot(levelId, body.position, body.rotation, body.velocity, body.angularVelocity, steerDir, time, CaptureParts(vehicle, body));
     }
 
-    public static bool TryRestore(CarSnapshot snapshot)
+    public static bool TryRestore(CarSnapshot snapshot, out Vector3 warp)
     {
+        warp = Vector3.zero;
+
         if (!TryFindCar(out ThisIsThePlayerVehicle vehicle, out Rigidbody body))
             return false;
+
+        warp = snapshot.Position - body.position;
+
+        List<Rigidbody> parts = FindParts(vehicle, body);
+        using TeleportGuard teleport = new(body, parts);
 
         body.position = snapshot.Position;
         body.rotation = snapshot.Rotation;
         body.velocity = snapshot.Velocity;
         body.angularVelocity = snapshot.AngularVelocity;
 
+        RestoreParts(snapshot, parts);
+
+        Physics.SyncTransforms();
+
         DampedSteering steering = vehicle.steering;
         if (steering != null && snapshot.SteerDir.sqrMagnitude > 0.0001f)
             steering.SetOrientation(snapshot.SteerDir);
 
-        PracticeCore.Log.Msg($"[restore] {snapshot.Describe()} (rb {body.GetInstanceID()}, steering {(steering == null ? "none" : "set")})");
         return true;
+    }
+
+    private static CarPart[] CaptureParts(ThisIsThePlayerVehicle vehicle, Rigidbody main)
+    {
+        Quaternion inverse = Quaternion.Inverse(main.rotation);
+        List<Rigidbody> parts = FindParts(vehicle, main);
+        CarPart[] captured = new CarPart[parts.Count];
+
+        for (int i = 0; i < parts.Count; i++)
+        {
+            Rigidbody part = parts[i];
+
+            captured[i] = new CarPart(
+                inverse * (part.position - main.position),
+                inverse * part.rotation,
+                part.velocity,
+                part.angularVelocity);
+        }
+
+        return captured;
+    }
+
+    private static void RestoreParts(CarSnapshot snapshot, List<Rigidbody> parts)
+    {
+        if (snapshot.Parts == null)
+            return;
+
+        if (snapshot.Parts.Length != parts.Count)
+        {
+            PracticeCore.Log.Warning($"[car] the car changed since the checkpoint ({snapshot.Parts.Length} parts then, {parts.Count} now), only the main body was moved");
+            return;
+        }
+
+        for (int i = 0; i < parts.Count; i++)
+        {
+            CarPart part = snapshot.Parts[i];
+            Rigidbody body = parts[i];
+
+            body.position = snapshot.Position + snapshot.Rotation * part.LocalPosition;
+            body.rotation = snapshot.Rotation * part.LocalRotation;
+            body.velocity = part.Velocity;
+            body.angularVelocity = part.AngularVelocity;
+        }
+    }
+
+    private static List<Rigidbody> FindParts(ThisIsThePlayerVehicle vehicle, Rigidbody main)
+    {
+        List<Rigidbody> parts = new();
+
+        foreach (Rigidbody part in vehicle.GetComponentsInChildren<Rigidbody>(true))
+        {
+            if (part == null || part.GetInstanceID() == main.GetInstanceID())
+                continue;
+
+            parts.Add(part);
+        }
+
+        return parts;
     }
 
     private static bool TryFindCar(out ThisIsThePlayerVehicle vehicle, out Rigidbody body)

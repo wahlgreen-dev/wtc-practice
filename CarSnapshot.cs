@@ -15,7 +15,11 @@ public readonly struct CarSnapshot
 
     public readonly Vector3 SteerDir;
 
-    public CarSnapshot(string levelId, Vector3 position, Quaternion rotation, Vector3 velocity, Vector3 angularVelocity, Vector3 steerDir)
+    public readonly float Time;
+
+    public readonly CarPart[] Parts;
+
+    public CarSnapshot(string levelId, Vector3 position, Quaternion rotation, Vector3 velocity, Vector3 angularVelocity, Vector3 steerDir, float time, CarPart[] parts)
     {
         LevelId = levelId;
         Position = position;
@@ -23,17 +27,12 @@ public readonly struct CarSnapshot
         Velocity = velocity;
         AngularVelocity = angularVelocity;
         SteerDir = steerDir;
+        Time = time;
+        Parts = parts;
     }
-
-    public float Speed => Velocity.magnitude;
 
     public bool Matches(string levelId) =>
         !string.IsNullOrEmpty(levelId) &&
         !string.IsNullOrEmpty(LevelId) &&
         string.Equals(LevelId, levelId, StringComparison.Ordinal);
-
-    public string Describe() =>
-        $"{LevelId} pos {Position.x:F1},{Position.y:F1},{Position.z:F1} " +
-        $"speed {Speed:F1}m/s spin {AngularVelocity.magnitude:F1}rad/s " +
-        $"dir {SteerDir.x:F2},{SteerDir.y:F2},{SteerDir.z:F2}";
 }

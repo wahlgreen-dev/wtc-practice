@@ -73,11 +73,14 @@ public static class PracticeHud
     private static void DrawPanel()
     {
         float y = Screen.height * PanelY;
+        bool gamepad = GameInput.UsingGamepad();
+        string save = gamepad ? PracticeMode.SaveButton : Name(PracticeMode.SaveKey);
+        string restore = gamepad ? PracticeMode.RestoreButton : Name(PracticeMode.RestoreKey);
 
         DrawBackdrop(y);
 
-        y = Row(y, PracticeMode.SaveKey, "CHECKPOINT");
-        y = Row(y, PracticeMode.RestoreKey, "TELEPORT");
+        y = Row(y, save, "CHECKPOINT");
+        y = Row(y, restore, "TELEPORT");
 
         DrawStatus(y + LineHeight * 0.5f);
     }
@@ -129,9 +132,9 @@ public static class PracticeHud
         GUI.contentColor = previous;
     }
 
-    private static float Row(float y, Key key, string verb)
+    private static float Row(float y, string button, string verb)
     {
-        GUI.Label(new Rect(PanelX, y, PanelWidth, LineHeight), $"{Name(key)}. {verb}", label);
+        GUI.Label(new Rect(PanelX, y, PanelWidth, LineHeight), $"{button}. {verb}", label);
         return y + LineHeight;
     }
 

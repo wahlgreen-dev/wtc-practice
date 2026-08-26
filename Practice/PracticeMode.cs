@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 namespace WtcPractice;
 
@@ -8,6 +9,9 @@ public static class PracticeMode
     public const Key SaveKey = Key.Digit1;
     public const Key RestoreKey = Key.Digit2;
     public const Key ToggleHudKey = Key.F1;
+
+    public const string SaveButton = "LB";
+    public const string RestoreButton = "RB";
 
     private static CarSnapshot? slot;
     private static Vector3? pendingWarp;
@@ -30,17 +34,34 @@ public static class PracticeMode
         DropSlotIfLevelChanged();
 
         Keyboard keyboard = Keyboard.current;
-        if (keyboard == null)
-            return;
+        Gamepad gamepad = Gamepad.current;
 
-        if (keyboard[SaveKey].wasPressedThisFrame)
+        if (Pressed(keyboard, SaveKey) || Pressed(gamepad?.leftShoulder))
             SaveState();
 
-        if (keyboard[RestoreKey].wasPressedThisFrame)
+        if (Pressed(keyboard, RestoreKey) || Pressed(gamepad?.rightShoulder))
             RestoreState();
 
-        if (keyboard[ToggleHudKey].wasPressedThisFrame)
+        if (Pressed(keyboard, ToggleHudKey))
             PracticeHud.Toggle();
+    }
+
+    private static bool Pressed(Keyboard keyboard, Key key)
+    {
+        if (keyboard == null || !keyboard[key].wasPressedThisFrame)
+            return false;
+
+        GameInput.RememberKeyboard();
+        return true;
+    }
+
+    private static bool Pressed(ButtonControl button)
+    {
+        if (button == null || !button.wasPressedThisFrame)
+            return false;
+
+        GameInput.RememberGamepad();
+        return true;
     }
 
     public static void Forget()

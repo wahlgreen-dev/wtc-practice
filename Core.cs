@@ -13,7 +13,7 @@ public class PracticeCore : MelonMod
     public override void OnInitializeMelon()
     {
         Log = LoggerInstance;
-        Log.Msg($"[practice] {PracticeMode.SaveKey} sets a checkpoint, {PracticeMode.RestoreKey} teleports back, {PracticeMode.ToggleHudKey} toggles the HUD");
+        Log.Msg($"[practice] {PracticeMode.SaveKey} or {PracticeMode.SaveButton} sets a checkpoint, {PracticeMode.RestoreKey} or {PracticeMode.RestoreButton} teleports back, {PracticeMode.ToggleHudKey} toggles the HUD");
     }
 
     public override void OnUpdate()

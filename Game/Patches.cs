@@ -2,7 +2,9 @@ using System;
 using HarmonyLib;
 using Il2CppSpeed.GhostCar;
 using Il2CppSpeed.Leaderboards;
+using Il2CppSpeed;
 using Il2CppSpeed.Level;
+using UnityEngine;
 
 namespace WtcPractice;
 
@@ -59,13 +61,30 @@ internal static class PatchAttemptFromRestart
     private static void Postfix() => Fresh.Begin("level restart");
 }
 
+[HarmonyPatch(typeof(TimeManager), nameof(TimeManager.Update))]
+internal static class PatchHoldFreeze
+{
+    private static void Postfix()
+    {
+        try
+        {
+            if (PracticeMode.Frozen)
+                Time.timeScale = 0f;
+        }
+        catch (Exception e)
+        {
+            PracticeCore.Log?.Error($"hold-freeze postfix threw: {e}");
+        }
+    }
+}
+
 internal static class Fresh
 {
     internal static void Begin(string cause)
     {
         try
         {
-            RunIntegrity.BeginFreshAttempt(cause);
+            RunIntegrity.Reset(cause);
         }
         catch (Exception e)
         {

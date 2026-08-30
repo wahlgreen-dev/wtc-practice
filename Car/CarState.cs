@@ -31,10 +31,7 @@ public static class CarState
         List<Rigidbody> parts = FindParts(vehicle, body);
         using TeleportGuard teleport = new(body, parts);
 
-        body.position = snapshot.Position;
-        body.rotation = snapshot.Rotation;
-        body.velocity = snapshot.Velocity;
-        body.angularVelocity = snapshot.AngularVelocity;
+        Place(body, snapshot.Position, snapshot.Rotation, snapshot.Velocity, snapshot.AngularVelocity);
 
         RestoreParts(snapshot, parts);
 
@@ -81,13 +78,20 @@ public static class CarState
         for (int i = 0; i < parts.Count; i++)
         {
             CarPart part = snapshot.Parts[i];
-            Rigidbody body = parts[i];
+            Vector3 position = snapshot.Position + snapshot.Rotation * part.LocalPosition;
+            Quaternion rotation = snapshot.Rotation * part.LocalRotation;
 
-            body.position = snapshot.Position + snapshot.Rotation * part.LocalPosition;
-            body.rotation = snapshot.Rotation * part.LocalRotation;
-            body.velocity = part.Velocity;
-            body.angularVelocity = part.AngularVelocity;
+            Place(parts[i], position, rotation, part.Velocity, part.AngularVelocity);
         }
+    }
+
+    private static void Place(Rigidbody body, Vector3 position, Quaternion rotation, Vector3 velocity, Vector3 angularVelocity)
+    {
+        body.position = position;
+        body.rotation = rotation;
+        body.velocity = velocity;
+        body.angularVelocity = angularVelocity;
+        body.transform.SetPositionAndRotation(position, rotation);
     }
 
     private static List<Rigidbody> FindParts(ThisIsThePlayerVehicle vehicle, Rigidbody main)

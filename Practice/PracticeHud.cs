@@ -76,11 +76,13 @@ public static class PracticeHud
         bool gamepad = GameInput.UsingGamepad();
         string save = gamepad ? PracticeMode.SaveButton : Name(PracticeMode.SaveKey);
         string restore = gamepad ? PracticeMode.RestoreButton : Name(PracticeMode.RestoreKey);
+        string freeze = Name(PracticeMode.ToggleFreezeKey);
 
         DrawBackdrop(y);
 
         y = Row(y, save, "CHECKPOINT");
         y = Row(y, restore, "TELEPORT");
+        y = Row(y, freeze, "FREEZE");
 
         DrawStatus(y + LineHeight * 0.5f);
     }

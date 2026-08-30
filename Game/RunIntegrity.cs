@@ -1,5 +1,3 @@
-using System;
-
 namespace WtcPractice;
 
 public static class RunIntegrity
@@ -18,7 +16,7 @@ public static class RunIntegrity
         PracticeCore.Log?.Msg($"[integrity] run invalidated: {reason}");
     }
 
-    public static void BeginFreshAttempt(string cause)
+    public static void Reset(string cause)
     {
         if (!IsDirty)
             return;
@@ -30,18 +28,10 @@ public static class RunIntegrity
 
     public static bool Blocks(string what)
     {
-        try
-        {
-            if (!IsDirty)
-                return false;
-
-            PracticeCore.Log?.Msg($"[integrity] blocked {what}: {Reason}");
-            return true;
-        }
-        catch (Exception e)
-        {
-            PracticeCore.Log?.Error($"integrity guard threw: {e}");
+        if (!IsDirty)
             return false;
-        }
+
+        PracticeCore.Log?.Msg($"[integrity] blocked {what}: {Reason}");
+        return true;
     }
 }

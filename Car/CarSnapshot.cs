@@ -19,7 +19,9 @@ public readonly struct CarSnapshot
 
     public readonly CarPart[] Parts;
 
-    public CarSnapshot(string levelId, Vector3 position, Quaternion rotation, Vector3 velocity, Vector3 angularVelocity, Vector3 steerDir, float time, CarPart[] parts)
+    public readonly CarPower? Power;
+
+    public CarSnapshot(string levelId, Vector3 position, Quaternion rotation, Vector3 velocity, Vector3 angularVelocity, Vector3 steerDir, float time, CarPart[] parts, CarPower? power)
     {
         LevelId = levelId;
         Position = position;
@@ -29,6 +31,7 @@ public readonly struct CarSnapshot
         SteerDir = steerDir;
         Time = time;
         Parts = parts;
+        Power = power;
     }
 
     public bool Matches(string levelId) =>

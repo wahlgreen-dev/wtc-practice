@@ -16,7 +16,7 @@ public static class CarState
         DampedSteering steering = vehicle.steering;
         Vector3 steerDir = steering == null ? body.transform.forward : steering.currDir;
 
-        return new CarSnapshot(levelId, body.position, body.rotation, body.velocity, body.angularVelocity, steerDir, time, CaptureParts(vehicle, body));
+        return new CarSnapshot(levelId, body.position, body.rotation, body.velocity, body.angularVelocity, steerDir, time, CaptureParts(vehicle, body), CapturePower(vehicle));
     }
 
     public static bool TryRestore(CarSnapshot snapshot, out Vector3 warp)
@@ -35,6 +35,8 @@ public static class CarState
 
         RestoreParts(snapshot, parts);
 
+        RestorePower(vehicle, snapshot.Power);
+
         Physics.SyncTransforms();
 
         DampedSteering steering = vehicle.steering;
@@ -42,6 +44,36 @@ public static class CarState
             steering.SetOrientation(snapshot.SteerDir);
 
         return true;
+    }
+
+    private static CarPower? CapturePower(ThisIsThePlayerVehicle vehicle)
+    {
+        ActionPowerState actionPower = FindPower(vehicle);
+        if (actionPower == null)
+            return null;
+
+        return new CarPower(actionPower, Time.time);
+    }
+
+    private static void RestorePower(ThisIsThePlayerVehicle vehicle, CarPower? snapshot)
+    {
+        if (!snapshot.HasValue)
+            return;
+
+        ActionPowerState actionPower = FindPower(vehicle);
+        if (actionPower == null)
+        {
+            PracticeCore.Log.Warning("[car] the checkpoint had a power bar, this car has none");
+            return;
+        }
+
+        snapshot.Value.RestoreTo(actionPower, Time.time);
+    }
+
+    private static ActionPowerState FindPower(ThisIsThePlayerVehicle vehicle)
+    {
+        ControllerState state = vehicle.state;
+        return state == null ? null : state.actionPower;
     }
 
     private static CarPart[] CaptureParts(ThisIsThePlayerVehicle vehicle, Rigidbody main)

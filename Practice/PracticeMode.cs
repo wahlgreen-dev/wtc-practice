@@ -14,7 +14,7 @@ public static class PracticeMode
     public const string SaveButton = "LB";
     public const string RestoreButton = "RB";
 
-    private static CarSnapshot? slot;
+    private static Checkpoint? slot;
     private static Vector3? pendingWarp;
 
     public static void LateTick()
@@ -75,10 +75,20 @@ public static class PracticeMode
 
     public static void Forget()
     {
+        DropSlotOnReload();
         Frozen = false;
         LevelWorld.Forget();
         PracticeCamera.Forget();
         PracticeHud.ClearStatus();
+    }
+
+    private static void DropSlotOnReload()
+    {
+        if (!slot.HasValue)
+            return;
+
+        slot = null;
+        PracticeCore.Log.Msg("[practice] scene reloaded, checkpoint dropped");
     }
 
     private static bool Ready()
@@ -114,9 +124,11 @@ public static class PracticeMode
         if (!captured.HasValue)
             return;
 
-        slot = captured;
+        WorldSnapshot world = WorldState.Capture();
+
+        slot = new Checkpoint(captured.Value, world);
         PracticeHud.Say("Checkpoint set");
-        PracticeCore.Log.Msg("[practice] checkpoint set");
+        PracticeCore.Log.Msg($"[practice] checkpoint set, {world.Count} physics objects held");
     }
 
     private static void ToggleFreeze()
@@ -144,19 +156,22 @@ public static class PracticeMode
             return;
         }
 
-        if (!slot.Value.Matches(LevelWorld.GetContentId()))
+        if (!slot.Value.Car.Matches(LevelWorld.GetContentId()))
         {
-            PracticeCore.Log.Msg($"[practice] checkpoint belongs to {slot.Value.LevelId}");
+            PracticeCore.Log.Msg($"[practice] checkpoint belongs to {slot.Value.Car.LevelId}");
             return;
         }
 
-        if (!CarState.TryRestore(slot.Value, out Vector3 warp))
+        if (!CarState.TryRestore(slot.Value.Car, out Vector3 warp))
             return;
 
-        LevelWorld.SetTime(slot.Value.Time);
+        WorldSnapshot world = slot.Value.World;
+        int restored = WorldState.Restore(world);
+
+        LevelWorld.SetTime(slot.Value.Car.Time);
         pendingWarp = warp;
 
-        PracticeHud.Say("Teleported");
+        PracticeHud.Say(world.Count > 0 && restored == 0 ? "Teleported (car only)" : "Teleported");
         PracticeCore.Log.Msg("[practice] teleported to checkpoint");
         RunIntegrity.MarkDirty("teleported to a checkpoint");
     }
@@ -167,10 +182,10 @@ public static class PracticeMode
             return;
 
         string levelId = LevelWorld.GetContentId();
-        if (string.IsNullOrEmpty(levelId) || slot.Value.Matches(levelId))
+        if (string.IsNullOrEmpty(levelId) || slot.Value.Car.Matches(levelId))
             return;
 
-        PracticeCore.Log.Msg($"[practice] left {slot.Value.LevelId}, checkpoint dropped");
+        PracticeCore.Log.Msg($"[practice] left {slot.Value.Car.LevelId}, checkpoint dropped");
         slot = null;
     }
 }

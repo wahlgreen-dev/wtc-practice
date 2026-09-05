@@ -8,17 +8,16 @@ public readonly struct TeleportGuard : IDisposable
 {
     private readonly List<Held> held;
 
-    public TeleportGuard(Rigidbody main, List<Rigidbody> parts)
+    public TeleportGuard(IReadOnlyList<Rigidbody> bodies)
     {
-        held = new List<Held>(parts.Count + 1) { new(main) };
+        held = new List<Held>(bodies.Count);
 
-        foreach (Rigidbody part in parts)
-            held.Add(new Held(part));
-
-        foreach (Held body in held)
+        foreach (Rigidbody body in bodies)
         {
-            body.Body.interpolation = RigidbodyInterpolation.None;
-            body.Body.collisionDetectionMode = CollisionDetectionMode.Discrete;
+            held.Add(new Held(body));
+
+            body.interpolation = RigidbodyInterpolation.None;
+            body.collisionDetectionMode = CollisionDetectionMode.Discrete;
         }
     }
 

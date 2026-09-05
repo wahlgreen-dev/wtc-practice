@@ -29,7 +29,10 @@ public static class CarState
         warp = snapshot.Position - body.position;
 
         List<Rigidbody> parts = FindParts(vehicle, body);
-        using TeleportGuard teleport = new(body, parts);
+        List<Rigidbody> whole = new(parts.Count + 1) { body };
+        whole.AddRange(parts);
+
+        using TeleportGuard teleport = new(whole);
 
         Place(body, snapshot.Position, snapshot.Rotation, snapshot.Velocity, snapshot.AngularVelocity);
 
@@ -42,6 +45,12 @@ public static class CarState
             steering.SetOrientation(snapshot.SteerDir);
 
         return true;
+    }
+
+    public static Transform FindCarRoot()
+    {
+        ThisIsThePlayerVehicle vehicle = Object.FindObjectOfType<ThisIsThePlayerVehicle>();
+        return vehicle == null ? null : vehicle.transform;
     }
 
     private static CarPart[] CaptureParts(ThisIsThePlayerVehicle vehicle, Rigidbody main)

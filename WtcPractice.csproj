@@ -15,13 +15,24 @@
   <PropertyGroup Condition="'$(GameDir)' == '' And '$(OS)' == 'Windows_NT'">
     <_SteamHklm>$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Valve\Steam@InstallPath)</_SteamHklm>
     <_SteamHkcu>$(registry:HKEY_CURRENT_USER\SOFTWARE\Valve\Steam@SteamPath)</_SteamHkcu>
-    <_Cand1>$(_SteamHklm)\steamapps\common\WHAT THE CAR</_Cand1>
-    <_Cand2>$(_SteamHkcu)\steamapps\common\WHAT THE CAR</_Cand2>
-    <_Cand3>C:\Program Files (x86)\Steam\steamapps\common\WHAT THE CAR</_Cand3>
 
-    <GameDir Condition="'$(_SteamHklm)' != '' And Exists('$(_Cand1)')">$(_Cand1)</GameDir>
-    <GameDir Condition="'$(GameDir)' == '' And '$(_SteamHkcu)' != '' And Exists('$(_Cand2)')">$(_Cand2)</GameDir>
-    <GameDir Condition="'$(GameDir)' == '' And Exists('$(_Cand3)')">$(_Cand3)</GameDir>
+    <_SteamRoot Condition="'$(_SteamHklm)' != '' And Exists('$(_SteamHklm)\steamapps\libraryfolders.vdf')">$(_SteamHklm)</_SteamRoot>
+    <_SteamRoot Condition="'$(_SteamRoot)' == '' And '$(_SteamHkcu)' != '' And Exists('$(_SteamHkcu)\steamapps\libraryfolders.vdf')">$(_SteamHkcu)</_SteamRoot>
+    <_SteamRoot Condition="'$(_SteamRoot)' == '' And Exists('C:\Program Files (x86)\Steam\steamapps\libraryfolders.vdf')">C:\Program Files (x86)\Steam</_SteamRoot>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GameDir)' == '' And '$(_SteamRoot)' != ''">
+    <_SteamAppId>2727650</_SteamAppId>
+    <_SteamVdf>$([System.IO.File]::ReadAllText('$(_SteamRoot)\steamapps\libraryfolders.vdf'))</_SteamVdf>
+    <_SteamLib>$([System.Text.RegularExpressions.Regex]::Match($(_SteamVdf), '(?s)"path"\s+"([^"]*)"(?:(?!"path").)*?"$(_SteamAppId)"').Groups[1].Value)</_SteamLib>
+    <_SteamGame Condition="'$(_SteamLib)' != ''">$([System.IO.Path]::GetFullPath('$(_SteamLib)\steamapps\common\WHAT THE CAR'))</_SteamGame>
+
+    <GameDir Condition="'$(_SteamGame)' != '' And Exists('$(_SteamGame)\GameAssembly.dll')">$(_SteamGame)</GameDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GameDir)' == '' And '$(_SteamRoot)' != ''">
+    <_SteamFallback>$(_SteamRoot)\steamapps\common\WHAT THE CAR</_SteamFallback>
+    <GameDir Condition="Exists('$(_SteamFallback)\GameAssembly.dll')">$(_SteamFallback)</GameDir>
   </PropertyGroup>
 
   <PropertyGroup>

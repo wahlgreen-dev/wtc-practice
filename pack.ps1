@@ -35,12 +35,12 @@ $RequiredInPayload = @(
 )
 
 function Get-ModVersion {
-    $coreCs = Join-Path $PSScriptRoot 'Core.cs'
+    $modSource = Join-Path $PSScriptRoot 'PracticeMod.cs'
     $pattern = 'MelonInfo\s*\(\s*typeof\([^)]*\)\s*,\s*"[^"]*"\s*,\s*"([^"]+)"'
-    $found = [regex]::Match((Get-Content $coreCs -Raw), $pattern)
+    $found = [regex]::Match((Get-Content $modSource -Raw), $pattern)
 
     if (-not $found.Success) {
-        throw "No MelonInfo version in $coreCs"
+        throw "No MelonInfo version in $modSource"
     }
 
     return $found.Groups[1].Value

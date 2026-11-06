@@ -1,10 +1,10 @@
 using System;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using MelonLoader;
 
 namespace WtcPractice;
 
-public static class PracticeHud
+public class PracticeHud
 {
     private const float Scale = 1.5f;
     private const float LineHeight = 18f * Scale;
@@ -22,32 +22,41 @@ public static class PracticeHud
     private static readonly Color StatusColor = new(0.655f, 0.910f, 0.741f, 1f);
     private static readonly Color BackdropColor = new(0f, 0f, 0f, 0.55f);
 
-    private static Texture2D backdrop;
-    private static GUIStyle backdropStyle;
-    private static GUIStyle label;
-    private static bool visible = true;
-    private static int failures;
-    private static bool disabled;
-    private static string status;
-    private static float statusUntil;
+    private readonly MelonLogger.Instance logger;
+    private readonly PracticeControls controls;
 
-    public static void Toggle()
+    private Texture2D backdrop;
+    private GUIStyle backdropStyle;
+    private GUIStyle label;
+    private bool visible = true;
+    private int failures;
+    private bool disabled;
+    private string status;
+    private float statusUntil;
+
+    public PracticeHud(MelonLogger.Instance logger, PracticeControls controls)
+    {
+        this.logger = logger;
+        this.controls = controls;
+    }
+
+    public void Toggle()
     {
         visible = !visible;
     }
 
-    public static void Say(string text)
+    public void Say(string text)
     {
         status = text;
         statusUntil = Time.unscaledTime + StatusSeconds;
     }
 
-    public static void ClearStatus()
+    public void ClearStatus()
     {
         status = null;
     }
 
-    public static void Draw(bool canPractice)
+    public void Draw(bool canPractice)
     {
         if (disabled || !visible || !canPractice)
             return;
@@ -60,34 +69,30 @@ public static class PracticeHud
         catch (Exception e)
         {
             failures++;
-            PracticeCore.Log.Error($"[hud] draw failed ({failures}/{MaxFailures}): {e}");
+            logger.Error($"HUD draw failed ({failures}/{MaxFailures}): {e}");
 
             if (failures >= MaxFailures)
             {
                 disabled = true;
-                PracticeCore.Log.Error("[hud] switched off after repeated failures, the keys still work");
+                logger.Error("HUD switched off after repeated failures, the keys still work");
             }
         }
     }
 
-    private static void DrawPanel()
+    private void DrawPanel()
     {
         float y = Screen.height * PanelY;
-        bool gamepad = GameInput.UsingGamepad();
-        string save = gamepad ? PracticeMode.SaveButton : Name(PracticeMode.SaveKey);
-        string restore = gamepad ? PracticeMode.RestoreButton : Name(PracticeMode.RestoreKey);
-        string freeze = Name(PracticeMode.ToggleFreezeKey);
 
         DrawBackdrop(y);
 
-        y = Row(y, save, "CHECKPOINT");
-        y = Row(y, restore, "TELEPORT");
-        y = Row(y, freeze, "FREEZE");
+        y = Row(y, controls.SaveLabel, "CHECKPOINT");
+        y = Row(y, controls.RestoreLabel, "TELEPORT");
+        y = Row(y, controls.FreezeLabel, "FREEZE");
 
         DrawStatus(y + LineHeight * 0.5f);
     }
 
-    private static void DrawBackdrop(float top)
+    private void DrawBackdrop(float top)
     {
         EnsureBackdrop();
 
@@ -99,7 +104,7 @@ public static class PracticeHud
         GUI.Label(new Rect(x, y, width, height), string.Empty, backdropStyle);
     }
 
-    private static void EnsureBackdrop()
+    private void EnsureBackdrop()
     {
         if (backdropStyle != null && backdrop != null)
             return;
@@ -116,7 +121,7 @@ public static class PracticeHud
         backdropStyle.normal.background = backdrop;
     }
 
-    private static void DrawStatus(float y)
+    private void DrawStatus(float y)
     {
         if (string.IsNullOrEmpty(status))
             return;
@@ -134,16 +139,10 @@ public static class PracticeHud
         GUI.contentColor = previous;
     }
 
-    private static float Row(float y, string button, string verb)
+    private float Row(float y, string button, string verb)
     {
         GUI.Label(new Rect(PanelX, y, PanelWidth, LineHeight), $"{button}. {verb}", label);
         return y + LineHeight;
-    }
-
-    private static string Name(Key key)
-    {
-        string raw = key.ToString();
-        return raw.StartsWith("Digit", StringComparison.Ordinal) ? raw.Substring(5) : raw;
     }
 
     private static Font InheritedFont()
@@ -162,7 +161,7 @@ public static class PracticeHud
         return font.fontSize;
     }
 
-    private static void EnsureStyle()
+    private void EnsureStyle()
     {
         if (label != null)
             return;

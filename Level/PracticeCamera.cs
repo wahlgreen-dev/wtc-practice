@@ -6,12 +6,12 @@ using Object = UnityEngine.Object;
 
 namespace WtcPractice;
 
-public static class PracticeCamera
+public class PracticeCamera
 {
-    private static AGameplayCameraController controller;
-    private static ThisIsThePlayerVehicle vehicle;
+    private AGameplayCameraController controller;
+    private ThisIsThePlayerVehicle vehicle;
 
-    public static void OnCarWarped(Vector3 delta)
+    public void OnCarWarped(Vector3 delta)
     {
         if (EnsureVehicle())
         {
@@ -26,7 +26,7 @@ public static class PracticeCamera
             controller.InstantlyReposition();
     }
 
-    public static void Forget()
+    public void Forget()
     {
         controller = null;
         vehicle = null;
@@ -38,7 +38,7 @@ public static class PracticeCamera
             CinemachineCore.Instance.OnTargetObjectWarped(target, delta);
     }
 
-    private static bool EnsureController()
+    private bool EnsureController()
     {
         if (controller == null)
             controller = Object.FindObjectOfType<AGameplayCameraController>();
@@ -46,7 +46,7 @@ public static class PracticeCamera
         return controller != null;
     }
 
-    private static bool EnsureVehicle()
+    private bool EnsureVehicle()
     {
         if (vehicle == null)
             vehicle = Object.FindObjectOfType<ThisIsThePlayerVehicle>();

@@ -1,14 +1,22 @@
 using System.Collections.Generic;
 using Il2Cpp;
 using Il2CppSpeed.Level;
+using MelonLoader;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace WtcPractice;
 
-public static class CarState
+public class CarState
 {
-    public static CarSnapshot? TryCapture(string levelId, float time)
+    private readonly MelonLogger.Instance logger;
+
+    public CarState(MelonLogger.Instance logger)
+    {
+        this.logger = logger;
+    }
+
+    public CarSnapshot? TryCapture()
     {
         if (!TryFindCar(out ThisIsThePlayerVehicle vehicle, out Rigidbody body))
             return null;
@@ -16,10 +24,10 @@ public static class CarState
         DampedSteering steering = vehicle.steering;
         Vector3 steerDir = steering == null ? body.transform.forward : steering.currDir;
 
-        return new CarSnapshot(levelId, body.position, body.rotation, body.velocity, body.angularVelocity, steerDir, time, CaptureParts(vehicle, body), CapturePower(vehicle));
+        return new CarSnapshot(body.position, body.rotation, body.velocity, body.angularVelocity, steerDir, CaptureParts(vehicle, body), CapturePower(vehicle));
     }
 
-    public static bool TryRestore(CarSnapshot snapshot, out Vector3 warp)
+    public bool TryRestore(CarSnapshot snapshot, out Vector3 warp)
     {
         warp = Vector3.zero;
 
@@ -46,7 +54,7 @@ public static class CarState
         return true;
     }
 
-    private static CarPower? CapturePower(ThisIsThePlayerVehicle vehicle)
+    private CarPower? CapturePower(ThisIsThePlayerVehicle vehicle)
     {
         ActionPowerState actionPower = FindPower(vehicle);
         if (actionPower == null)
@@ -55,7 +63,7 @@ public static class CarState
         return new CarPower(actionPower, Time.time);
     }
 
-    private static void RestorePower(ThisIsThePlayerVehicle vehicle, CarPower? snapshot)
+    private void RestorePower(ThisIsThePlayerVehicle vehicle, CarPower? snapshot)
     {
         if (!snapshot.HasValue)
             return;
@@ -63,20 +71,20 @@ public static class CarState
         ActionPowerState actionPower = FindPower(vehicle);
         if (actionPower == null)
         {
-            PracticeCore.Log.Warning("[car] the checkpoint had a power bar, this car has none");
+            logger.Warning("The checkpoint had a power bar, this car has none");
             return;
         }
 
         snapshot.Value.RestoreTo(actionPower, Time.time);
     }
 
-    private static ActionPowerState FindPower(ThisIsThePlayerVehicle vehicle)
+    private ActionPowerState FindPower(ThisIsThePlayerVehicle vehicle)
     {
         ControllerState state = vehicle.state;
         return state == null ? null : state.actionPower;
     }
 
-    private static CarPart[] CaptureParts(ThisIsThePlayerVehicle vehicle, Rigidbody main)
+    private CarPart[] CaptureParts(ThisIsThePlayerVehicle vehicle, Rigidbody main)
     {
         Quaternion inverse = Quaternion.Inverse(main.rotation);
         List<Rigidbody> parts = FindParts(vehicle, main);
@@ -96,14 +104,14 @@ public static class CarState
         return captured;
     }
 
-    private static void RestoreParts(CarSnapshot snapshot, List<Rigidbody> parts)
+    private void RestoreParts(CarSnapshot snapshot, List<Rigidbody> parts)
     {
         if (snapshot.Parts == null)
             return;
 
         if (snapshot.Parts.Length != parts.Count)
         {
-            PracticeCore.Log.Warning($"[car] car changed since the checkpoint ({snapshot.Parts.Length} parts, now {parts.Count}), moved the main body only");
+            logger.Warning($"Car changed since the checkpoint ({snapshot.Parts.Length} parts, now {parts.Count}), moved the main body only");
             return;
         }
 
@@ -117,7 +125,7 @@ public static class CarState
         }
     }
 
-    private static void Place(Rigidbody body, Vector3 position, Quaternion rotation, Vector3 velocity, Vector3 angularVelocity)
+    private void Place(Rigidbody body, Vector3 position, Quaternion rotation, Vector3 velocity, Vector3 angularVelocity)
     {
         body.position = position;
         body.rotation = rotation;
@@ -126,7 +134,7 @@ public static class CarState
         body.transform.SetPositionAndRotation(position, rotation);
     }
 
-    private static List<Rigidbody> FindParts(ThisIsThePlayerVehicle vehicle, Rigidbody main)
+    private List<Rigidbody> FindParts(ThisIsThePlayerVehicle vehicle, Rigidbody main)
     {
         List<Rigidbody> parts = new();
 
@@ -141,20 +149,20 @@ public static class CarState
         return parts;
     }
 
-    private static bool TryFindCar(out ThisIsThePlayerVehicle vehicle, out Rigidbody body)
+    private bool TryFindCar(out ThisIsThePlayerVehicle vehicle, out Rigidbody body)
     {
         body = null;
         vehicle = Object.FindObjectOfType<ThisIsThePlayerVehicle>();
         if (vehicle == null)
         {
-            PracticeCore.Log.Warning("[car] no player vehicle in this scene");
+            logger.Warning("No player vehicle in this scene");
             return false;
         }
 
         body = vehicle._mainRigidbody;
         if (body == null)
         {
-            PracticeCore.Log.Warning("[car] vehicle has no main rigidbody yet");
+            logger.Warning("Vehicle has no main rigidbody yet");
             return false;
         }
 

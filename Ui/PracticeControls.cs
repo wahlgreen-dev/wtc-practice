@@ -18,11 +18,17 @@ public class PracticeControls
 
     private bool lastPressWasGamepad;
 
-    public string SaveLabel => UsingGamepad() ? SaveButton : Name(SaveKey);
+    public (string Button, string Action)[] Rows()
+    {
+        bool gamepad = UsingGamepad();
 
-    public string RestoreLabel => UsingGamepad() ? RestoreButton : Name(RestoreKey);
-
-    public string FreezeLabel => Name(FreezeKey);
+        return new[]
+        {
+            (gamepad ? SaveButton : Name(SaveKey), "CHECKPOINT"),
+            (gamepad ? RestoreButton : Name(RestoreKey), "TELEPORT"),
+            (Name(FreezeKey), "FREEZE"),
+        };
+    }
 
     public bool SavePressed() => Pressed(SaveKey) || Pressed(Gamepad.current?.leftShoulder);
 

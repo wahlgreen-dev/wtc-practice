@@ -13,20 +13,24 @@ public class PracticeHud
     private const float PanelY = 0.38f;
     private const float StatusSeconds = 2.5f;
     private const float Padding = 10f;
-    private const float ContentHeight = LineHeight * 3.5f;
+    private const float StatusGap = LineHeight * 0.5f;
     private const float BoxWidth = 130f * Scale;
+    private const float OutlineThickness = 2f;
 
     private const int FallbackFontSize = 12;
     private const int MaxFailures = 3;
 
     private static readonly Color StatusColor = new(0.655f, 0.910f, 0.741f, 1f);
     private static readonly Color BackdropColor = new(0f, 0f, 0f, 0.55f);
+    private static readonly Color ValidRunColor = new(0.30f, 0.85f, 0.45f, 1f);
+    private static readonly Color InvalidRunColor = new(0.95f, 0.25f, 0.25f, 1f);
 
     private readonly MelonLogger.Instance logger;
     private readonly PracticeControls controls;
 
-    private Texture2D backdrop;
     private GUIStyle backdropStyle;
+    private GUIStyle validOutlineStyle;
+    private GUIStyle invalidOutlineStyle;
     private GUIStyle label;
     private bool visible = true;
     private int failures;
@@ -56,7 +60,7 @@ public class PracticeHud
         status = null;
     }
 
-    public void Draw(bool canPractice)
+    public void Draw(bool canPractice, bool runValid)
     {
         if (disabled || !visible || !canPractice)
             return;
@@ -64,7 +68,7 @@ public class PracticeHud
         try
         {
             EnsureStyle();
-            DrawPanel();
+            DrawPanel(runValid);
         }
         catch (Exception e)
         {
@@ -79,59 +83,79 @@ public class PracticeHud
         }
     }
 
-    private void DrawPanel()
+    private void DrawPanel(bool runValid)
     {
+        (string Button, string Action)[] rows = controls.Rows();
+        bool hasStatus = HasStatus();
         float y = Screen.height * PanelY;
+        float contentHeight = rows.Length * LineHeight + (hasStatus ? StatusGap + LineHeight : 0f);
 
-        DrawBackdrop(y);
+        DrawBox(y, contentHeight, runValid);
 
-        y = Row(y, controls.SaveLabel, "CHECKPOINT");
-        y = Row(y, controls.RestoreLabel, "TELEPORT");
-        y = Row(y, controls.FreezeLabel, "FREEZE");
+        foreach ((string button, string action) in rows)
+            y = Row(y, button, action);
 
-        DrawStatus(y + LineHeight * 0.5f);
+        if (hasStatus)
+            DrawStatus(y + StatusGap);
     }
 
-    private void DrawBackdrop(float top)
+    private void DrawBox(float top, float contentHeight, bool runValid)
     {
-        EnsureBackdrop();
+        EnsureBoxStyles();
 
         float x = PanelX - Padding;
         float y = top - Padding;
         float width = BoxWidth + Padding * 2f;
-        float height = ContentHeight + Padding * 2f;
+        float height = contentHeight + Padding * 2f;
 
         GUI.Label(new Rect(x, y, width, height), string.Empty, backdropStyle);
+
+        GUIStyle outline = runValid ? validOutlineStyle : invalidOutlineStyle;
+        GUI.Label(new Rect(x, y, width, OutlineThickness), string.Empty, outline);
+        GUI.Label(new Rect(x, y + height - OutlineThickness, width, OutlineThickness), string.Empty, outline);
+        GUI.Label(new Rect(x, y, OutlineThickness, height), string.Empty, outline);
+        GUI.Label(new Rect(x + width - OutlineThickness, y, OutlineThickness, height), string.Empty, outline);
     }
 
-    private void EnsureBackdrop()
+    private void EnsureBoxStyles()
     {
-        if (backdropStyle != null && backdrop != null)
+        if (backdropStyle != null && backdropStyle.normal.background != null)
             return;
 
-        backdrop = new Texture2D(1, 1, TextureFormat.RGBA32, false)
+        backdropStyle = SolidStyle(BackdropColor);
+        validOutlineStyle = SolidStyle(ValidRunColor);
+        invalidOutlineStyle = SolidStyle(InvalidRunColor);
+    }
+
+    private static GUIStyle SolidStyle(Color color)
+    {
+        Texture2D texture = new(1, 1, TextureFormat.RGBA32, false)
         {
             hideFlags = HideFlags.HideAndDontSave
         };
 
-        backdrop.SetPixel(0, 0, BackdropColor);
-        backdrop.Apply();
+        texture.SetPixel(0, 0, color);
+        texture.Apply();
 
-        backdropStyle = new GUIStyle();
-        backdropStyle.normal.background = backdrop;
+        GUIStyle style = new();
+        style.normal.background = texture;
+        return style;
+    }
+
+    private bool HasStatus()
+    {
+        if (string.IsNullOrEmpty(status))
+            return false;
+
+        if (Time.unscaledTime <= statusUntil)
+            return true;
+
+        status = null;
+        return false;
     }
 
     private void DrawStatus(float y)
     {
-        if (string.IsNullOrEmpty(status))
-            return;
-
-        if (Time.unscaledTime > statusUntil)
-        {
-            status = null;
-            return;
-        }
-
         Color previous = GUI.contentColor;
 
         GUI.contentColor = StatusColor;

@@ -60,7 +60,7 @@ public class LevelSession
 
     public void DrawHud()
     {
-        hud.Draw(canPractice);
+        hud.Draw(canPractice, !RunInvalidated);
     }
 
     public void OnSceneInitialized()

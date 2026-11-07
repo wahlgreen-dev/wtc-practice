@@ -11,10 +11,14 @@ public class PracticeControls
     private const Key SaveKey = Key.Digit1;
     private const Key RestoreKey = Key.Digit2;
     private const Key FreezeKey = Key.Digit3;
+    private const Key PreviousKey = Key.Digit4;
+    private const Key NextKey = Key.Digit5;
     private const Key HudKey = Key.F1;
 
     private const string SaveButton = "LB";
     private const string RestoreButton = "RB";
+    private const string PreviousButton = "D-LEFT";
+    private const string NextButton = "D-RIGHT";
 
     private bool lastPressWasGamepad;
 
@@ -27,6 +31,8 @@ public class PracticeControls
             (gamepad ? SaveButton : Name(SaveKey), "CHECKPOINT"),
             (gamepad ? RestoreButton : Name(RestoreKey), "TELEPORT"),
             (Name(FreezeKey), "FREEZE"),
+            (gamepad ? PreviousButton : Name(PreviousKey), "PREVIOUS"),
+            (gamepad ? NextButton : Name(NextKey), "NEXT"),
         };
     }
 
@@ -35,6 +41,10 @@ public class PracticeControls
     public bool RestorePressed() => Pressed(RestoreKey) || Pressed(Gamepad.current?.rightShoulder);
 
     public bool FreezePressed() => Pressed(FreezeKey);
+
+    public bool PreviousPressed() => Pressed(PreviousKey) || Pressed(Gamepad.current?.dpad.left);
+
+    public bool NextPressed() => Pressed(NextKey) || Pressed(Gamepad.current?.dpad.right);
 
     public bool HudPressed() => Pressed(HudKey);
 

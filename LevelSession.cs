@@ -12,7 +12,8 @@ public class LevelSession
     private readonly PracticeHud hud;
     private readonly CarState car;
 
-    private Checkpoint checkpoint;
+    private readonly CheckpointList checkpoints = new();
+
     private Vector3? pendingWarp;
     private bool canPractice;
 
@@ -39,8 +40,14 @@ public class LevelSession
         if (controls.SavePressed())
             SaveCheckpoint();
 
-        if (controls.RestorePressed())
-            RestoreCheckpoint();
+        if (controls.RestorePressed() && TeleportToCurrent())
+            hud.Say("Teleported");
+
+        if (controls.PreviousPressed())
+            StepCheckpoint(-1);
+
+        if (controls.NextPressed())
+            StepCheckpoint(1);
 
         if (controls.FreezePressed())
             ToggleFreeze();
@@ -93,22 +100,34 @@ public class LevelSession
         if (!captured.HasValue)
             return;
 
-        checkpoint = new Checkpoint(levelId, world.GetTime(), captured.Value);
-        hud.Say("Checkpoint set");
+        checkpoints.Add(new Checkpoint(levelId, world.GetTime(), captured.Value));
+        SayPosition();
     }
 
-    private void RestoreCheckpoint()
+    private bool TeleportToCurrent()
     {
+        Checkpoint checkpoint = checkpoints.Current;
         if (!canPractice || checkpoint == null || !checkpoint.BelongsTo(world.GetContentId()))
-            return;
+            return false;
 
         if (!car.TryRestore(checkpoint.Car, out Vector3 warp))
-            return;
+            return false;
 
         world.SetTime(checkpoint.Time);
         pendingWarp = warp;
         RunInvalidated = true;
-        hud.Say("Teleported");
+        return true;
+    }
+
+    private void StepCheckpoint(int direction)
+    {
+        if (canPractice && checkpoints.Step(direction) && TeleportToCurrent())
+            SayPosition();
+    }
+
+    private void SayPosition()
+    {
+        hud.Say($"Checkpoint {checkpoints.Position}/{checkpoints.Count}");
     }
 
     private void ToggleFreeze()
@@ -126,13 +145,14 @@ public class LevelSession
 
     private void DropCheckpointIfLevelChanged()
     {
-        if (checkpoint == null)
+        Checkpoint current = checkpoints.Current;
+        if (current == null)
             return;
 
         string levelId = world.GetContentId();
-        if (string.IsNullOrEmpty(levelId) || checkpoint.BelongsTo(levelId))
+        if (string.IsNullOrEmpty(levelId) || current.BelongsTo(levelId))
             return;
 
-        checkpoint = null;
+        checkpoints.Clear();
     }
 }

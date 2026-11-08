@@ -11,6 +11,7 @@ public class LevelSession
     private readonly PracticeControls controls = new();
     private readonly PracticeHud hud;
     private readonly CarState car;
+    private readonly CheckpointFlags flags;
 
     private readonly CheckpointList checkpoints = new();
 
@@ -22,6 +23,7 @@ public class LevelSession
         this.logger = logger;
         hud = new PracticeHud(logger, controls);
         car = new CarState(logger);
+        flags = new CheckpointFlags(logger);
     }
 
     public bool Frozen { get; private set; }
@@ -36,6 +38,7 @@ public class LevelSession
             Frozen = false;
 
         DropCheckpointIfLevelChanged();
+        flags.Update(world.InLevel, checkpoints);
 
         if (controls.SavePressed())
             SaveCheckpoint();
@@ -70,8 +73,9 @@ public class LevelSession
         hud.Draw(canPractice, !RunInvalidated);
     }
 
-    public void OnSceneInitialized()
+    public void OnSceneInitialized(string sceneName)
     {
+        flags.OnSceneInitialized(sceneName);
         Frozen = false;
         RunInvalidated = false;
         world.Forget();
@@ -101,6 +105,7 @@ public class LevelSession
             return;
 
         checkpoints.Add(new Checkpoint(levelId, world.GetTime(), captured.Value));
+        flags.Sync(checkpoints);
         SayPosition();
     }
 
@@ -121,7 +126,12 @@ public class LevelSession
 
     private void StepCheckpoint(int direction)
     {
-        if (canPractice && checkpoints.Step(direction) && TeleportToCurrent())
+        if (!canPractice || !checkpoints.Step(direction))
+            return;
+
+        flags.Sync(checkpoints);
+
+        if (TeleportToCurrent())
             SayPosition();
     }
 

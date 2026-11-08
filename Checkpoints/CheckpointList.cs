@@ -13,8 +13,13 @@ public class CheckpointList
 
     public int Position => currentIndex + 1;
 
+    public Checkpoint this[int index] => checkpoints[index];
+
     public void Add(Checkpoint checkpoint)
     {
+        for (int i = currentIndex + 1; i < checkpoints.Count; i++)
+            checkpoints[i].RemoveFlag();
+
         checkpoints.RemoveRange(currentIndex + 1, checkpoints.Count - currentIndex - 1);
         checkpoints.Add(checkpoint);
         currentIndex = checkpoints.Count - 1;
@@ -32,6 +37,9 @@ public class CheckpointList
 
     public void Clear()
     {
+        foreach (Checkpoint checkpoint in checkpoints)
+            checkpoint.RemoveFlag();
+
         checkpoints.Clear();
         currentIndex = -1;
     }

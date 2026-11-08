@@ -34,6 +34,6 @@ public class PracticeMod : MelonMod
 
     public override void OnSceneWasInitialized(int buildIndex, string sceneName)
     {
-        Session.OnSceneInitialized();
+        Session.OnSceneInitialized(sceneName);
     }
 }

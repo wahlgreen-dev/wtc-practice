@@ -28,11 +28,11 @@ public class PracticeControls
 
         return new[]
         {
-            (gamepad ? SaveIcon : KeyIcon(SaveKey), "CHECKPOINT"),
-            (gamepad ? RestoreIcon : KeyIcon(RestoreKey), "TELEPORT"),
-            (gamepad ? FreezeIcon : KeyIcon(FreezeKey), "FREEZE"),
-            (gamepad ? PreviousIcon : KeyIcon(PreviousKey), "PREVIOUS"),
-            (gamepad ? NextIcon : KeyIcon(NextKey), "NEXT"),
+            (gamepad ? SaveIcon : KeyIcon(SaveKey), "Checkpoint"),
+            (gamepad ? RestoreIcon : KeyIcon(RestoreKey), "Teleport"),
+            (gamepad ? FreezeIcon : KeyIcon(FreezeKey), "Freeze"),
+            (gamepad ? PreviousIcon : KeyIcon(PreviousKey), "Previous"),
+            (gamepad ? NextIcon : KeyIcon(NextKey), "Next"),
         };
     }
 

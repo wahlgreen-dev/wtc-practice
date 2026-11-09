@@ -63,6 +63,10 @@
   </Target>
 
   <ItemGroup>
+    <EmbeddedResource Include="Ui\Icons\*.png" LogicalName="Icons.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="MelonLoader">
       <HintPath>$(MlNet6)\MelonLoader.dll</HintPath>
       <Private>false</Private>

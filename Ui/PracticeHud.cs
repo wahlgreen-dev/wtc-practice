@@ -6,7 +6,7 @@ namespace WtcPractice;
 
 public class PracticeHud
 {
-    private const float Scale = 1.5f;
+    private const float Scale = 2f;
     private const float LineHeight = 18f * Scale;
     private const float PanelWidth = 220f * Scale;
     private const float PanelX = 14f;
@@ -16,6 +16,7 @@ public class PracticeHud
     private const float StatusGap = LineHeight * 0.5f;
     private const float BoxWidth = 130f * Scale;
     private const float OutlineThickness = 2f;
+    private const float IconGap = 8f;
 
     private const int FallbackFontSize = 12;
     private const int MaxFailures = 3;
@@ -27,6 +28,7 @@ public class PracticeHud
 
     private readonly MelonLogger.Instance logger;
     private readonly PracticeControls controls;
+    private readonly PromptIcons icons;
 
     private GUIStyle backdropStyle;
     private GUIStyle validOutlineStyle;
@@ -42,6 +44,7 @@ public class PracticeHud
     {
         this.logger = logger;
         this.controls = controls;
+        icons = new PromptIcons();
     }
 
     public void Toggle()
@@ -85,15 +88,15 @@ public class PracticeHud
 
     private void DrawPanel(bool runValid)
     {
-        (string Button, string Action)[] rows = controls.Rows();
+        (string Icon, string Action)[] rows = controls.Rows();
         bool hasStatus = HasStatus();
         float y = Screen.height * PanelY;
         float contentHeight = rows.Length * LineHeight + (hasStatus ? StatusGap + LineHeight : 0f);
 
         DrawBox(y, contentHeight, runValid);
 
-        foreach ((string button, string action) in rows)
-            y = Row(y, button, action);
+        foreach ((string icon, string action) in rows)
+            y = Row(y, icon, action);
 
         if (hasStatus)
             DrawStatus(y + StatusGap);
@@ -163,9 +166,10 @@ public class PracticeHud
         GUI.contentColor = previous;
     }
 
-    private float Row(float y, string button, string verb)
+    private float Row(float y, string icon, string action)
     {
-        GUI.Label(new Rect(PanelX, y, PanelWidth, LineHeight), $"{button}. {verb}", label);
+        GUI.Label(new Rect(PanelX, y, LineHeight, LineHeight), string.Empty, icons.Get(icon));
+        GUI.Label(new Rect(PanelX + LineHeight + IconGap, y, PanelWidth, LineHeight), action, label);
         return y + LineHeight;
     }
 

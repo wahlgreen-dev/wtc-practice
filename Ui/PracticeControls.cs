@@ -1,4 +1,3 @@
-using System;
 using Il2CppSpeed;
 using Il2CppSpeed.Input;
 using UnityEngine.InputSystem;
@@ -15,25 +14,25 @@ public class PracticeControls
     private const Key NextKey = Key.Digit5;
     private const Key HudKey = Key.F1;
 
-    private const string SaveButton = "LB";
-    private const string RestoreButton = "RB";
-    private const string FreezeButton = "D-DOWN";
-    private const string PreviousButton = "D-LEFT";
-    private const string NextButton = "D-RIGHT";
+    private const string SaveIcon = "xbox_lb_outline";
+    private const string RestoreIcon = "xbox_rb_outline";
+    private const string FreezeIcon = "xbox_dpad_down_outline";
+    private const string PreviousIcon = "xbox_dpad_left_outline";
+    private const string NextIcon = "xbox_dpad_right_outline";
 
     private bool lastPressWasGamepad;
 
-    public (string Button, string Action)[] Rows()
+    public (string Icon, string Action)[] Rows()
     {
         bool gamepad = UsingGamepad();
 
         return new[]
         {
-            (gamepad ? SaveButton : Name(SaveKey), "CHECKPOINT"),
-            (gamepad ? RestoreButton : Name(RestoreKey), "TELEPORT"),
-            (gamepad ? FreezeButton : Name(FreezeKey), "FREEZE"),
-            (gamepad ? PreviousButton : Name(PreviousKey), "PREVIOUS"),
-            (gamepad ? NextButton : Name(NextKey), "NEXT"),
+            (gamepad ? SaveIcon : KeyIcon(SaveKey), "CHECKPOINT"),
+            (gamepad ? RestoreIcon : KeyIcon(RestoreKey), "TELEPORT"),
+            (gamepad ? FreezeIcon : KeyIcon(FreezeKey), "FREEZE"),
+            (gamepad ? PreviousIcon : KeyIcon(PreviousKey), "PREVIOUS"),
+            (gamepad ? NextIcon : KeyIcon(NextKey), "NEXT"),
         };
     }
 
@@ -77,9 +76,5 @@ public class PracticeControls
         return manager == null ? lastPressWasGamepad : manager.currentControllerType == EControllerType.Gamepad;
     }
 
-    private static string Name(Key key)
-    {
-        string raw = key.ToString();
-        return raw.StartsWith("Digit", StringComparison.Ordinal) ? raw.Substring(5) : raw;
-    }
+    private static string KeyIcon(Key key) => "keyboard_" + key.ToString().Replace("Digit", string.Empty) + "_outline";
 }

@@ -1,6 +1,6 @@
 using MelonLoader;
 
-[assembly: MelonInfo(typeof(WtcPractice.PracticeMod), "WTC Practice", "0.2.0", "wahlgreen-dev")]
+[assembly: MelonInfo(typeof(WtcPractice.PracticeMod), "WTC Practice", "0.3.0", "wahlgreen-dev")]
 [assembly: MelonGame("Triband", "WHATTHECAR")]
 
 namespace WtcPractice;

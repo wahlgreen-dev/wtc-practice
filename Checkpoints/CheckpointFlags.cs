@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSpeed.GhostCar;
+using Il2CppTMPro;
 using MelonLoader;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -21,12 +22,18 @@ public class CheckpointFlags
     private const float GhostBodySlot = 34.09375f;
     private const int SettleFrames = 5;
 
+    private const string NumberFontName = "MuseoSansRounded1000 SDF";
+    private const float NumberX = -0.355f;
+    private const float NumberDepth = 0.02f;
+    private const float NumberAreaWidth = 0.71f;
+    private const float NumberAreaHeight = 0.54f;
+    private const float NumberFontSize = 4.5f;
+
     private const float ClothHeight = 1.33f;
     private const float CurrentScale = 1.5f;
     private const float OtherScale = 1.05f;
-    private const int VehicleLayer = 9;
-    private const float RayStartHeight = 1f;
-    private const float RayLength = 6f;
+
+    private static readonly Color NumberColor = new(0f, 0f, 0f, 0.65f);
 
     private static readonly string[] FlagPaths =
     {
@@ -45,6 +52,8 @@ public class CheckpointFlags
     private int paintLayer;
     private bool paintStale = true;
     private bool paintWarned;
+    private TMP_FontAsset numberFont;
+    private bool fontWarned;
     private int framesUntilHarvest;
 
     public CheckpointFlags(MelonLogger.Instance logger)
@@ -84,7 +93,7 @@ public class CheckpointFlags
             Checkpoint checkpoint = checkpoints[i];
 
             if (checkpoint.Flag == null)
-                checkpoint.Flag = CreateFlag(checkpoint.Car);
+                checkpoint.Flag = CreateFlag(checkpoint.Car, i + 1);
 
             Paint(checkpoint.Flag);
             float scale = checkpoint == checkpoints.Current ? CurrentScale : OtherScale;
@@ -231,21 +240,59 @@ public class CheckpointFlags
         Object.DontDestroyOnLoad(root);
     }
 
-    private GameObject CreateFlag(CarSnapshot car)
+    private GameObject CreateFlag(CarSnapshot car, int number)
     {
         GameObject flag = Object.Instantiate(template, root.transform);
 
         Vector3 forward = Flat(car.Rotation * Vector3.forward);
-        Vector3 rayStart = car.Position + Vector3.up * RayStartHeight;
-
-        Vector3 position = Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, RayLength, ~(1 << VehicleLayer), QueryTriggerInteraction.Ignore)
-            ? rayStart + Vector3.down * hit.distance
-            : car.Position;
-
         Quaternion rotation = forward == Vector3.zero ? Quaternion.identity : Quaternion.LookRotation(-forward);
-        flag.transform.SetPositionAndRotation(position, rotation);
+        flag.transform.SetPositionAndRotation(car.Position, rotation);
         flag.SetActive(true);
+
+        if (EnsureFont())
+            AddNumber(flag, number);
+
         return flag;
+    }
+
+    private bool EnsureFont()
+    {
+        if (numberFont != null)
+            return true;
+
+        var fonts = Resources.FindObjectsOfTypeAll<TMP_FontAsset>();
+        for (int i = 0; i < fonts.Length; i++)
+        {
+            if (fonts[i] != null && fonts[i].name == NumberFontName)
+                numberFont = fonts[i];
+        }
+
+        if (numberFont == null && !fontWarned)
+        {
+            logger.Warning("Couldn't find the game's font, flags won't show numbers");
+            fontWarned = true;
+        }
+
+        return numberFont != null;
+    }
+
+    private void AddNumber(GameObject flag, int number)
+    {
+        GameObject holder = new("Number");
+        holder.layer = paintLayer;
+
+        RectTransform rect = holder.AddComponent<RectTransform>();
+        rect.SetParent(flag.transform, false);
+        rect.localPosition = new Vector3(NumberX, ClothHeight, NumberDepth);
+        rect.localRotation = Quaternion.Euler(0f, 180f, 0f);
+        rect.sizeDelta = new Vector2(NumberAreaWidth, NumberAreaHeight);
+
+        TextMeshPro label = holder.AddComponent<TextMeshPro>();
+        label.font = numberFont;
+        label.fontSize = NumberFontSize;
+        label.alignment = TextAlignmentOptions.Center;
+        label.color = NumberColor;
+        label.text = number.ToString();
     }
 
     private static Vector3 Flat(Vector3 direction)
@@ -259,6 +306,9 @@ public class CheckpointFlags
         var renderers = flag.GetComponentsInChildren<MeshRenderer>(true);
         for (int i = 0; i < renderers.Length; i++)
         {
+            if (renderers[i].GetComponent<TextMeshPro>() != null)
+                continue;
+
             Mesh mesh = renderers[i].GetComponent<MeshFilter>().sharedMesh;
 
             Il2CppReferenceArray<Material> materials = new(mesh.subMeshCount);

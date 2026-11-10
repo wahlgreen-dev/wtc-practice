@@ -12,6 +12,7 @@ public class PracticeControls
     private const Key FreezeKey = Key.Digit3;
     private const Key PreviousKey = Key.Digit4;
     private const Key NextKey = Key.Digit5;
+    private const Key ClearKey = Key.Digit6;
     private const Key HudKey = Key.F1;
 
     private const string SaveIcon = "xbox_lb_outline";
@@ -19,6 +20,7 @@ public class PracticeControls
     private const string FreezeIcon = "xbox_dpad_down_outline";
     private const string PreviousIcon = "xbox_dpad_left_outline";
     private const string NextIcon = "xbox_dpad_right_outline";
+    private const string ClearIcon = "xbox_dpad_up_outline";
 
     private bool lastPressWasGamepad;
 
@@ -33,6 +35,7 @@ public class PracticeControls
             (gamepad ? FreezeIcon : KeyIcon(FreezeKey), "Freeze"),
             (gamepad ? PreviousIcon : KeyIcon(PreviousKey), "Previous"),
             (gamepad ? NextIcon : KeyIcon(NextKey), "Next"),
+            (gamepad ? ClearIcon : KeyIcon(ClearKey), "Clear (Hold)"),
         };
     }
 
@@ -46,7 +49,17 @@ public class PracticeControls
 
     public bool NextPressed() => Pressed(NextKey) || Pressed(Gamepad.current?.dpad.right);
 
+    public bool ClearHeld() => Held(ClearKey) || Held(Gamepad.current?.dpad.up);
+
     public bool HudPressed() => Pressed(HudKey);
+
+    private static bool Held(Key key)
+    {
+        Keyboard keyboard = Keyboard.current;
+        return keyboard != null && keyboard[key].isPressed;
+    }
+
+    private static bool Held(ButtonControl button) => button != null && button.isPressed;
 
     private bool Pressed(Key key)
     {

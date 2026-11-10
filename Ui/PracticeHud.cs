@@ -28,6 +28,7 @@ public class PracticeHud
     private static readonly Color BackdropColor = new(0f, 0f, 0f, 0.55f);
     private static readonly Color ValidRunColor = new(0.30f, 0.85f, 0.45f, 1f);
     private static readonly Color InvalidRunColor = new(0.95f, 0.25f, 0.25f, 1f);
+    private static readonly Color ClearProgressColor = new(1f, 1f, 1f, 0.3f);
 
     private readonly MelonLogger.Instance logger;
     private readonly PracticeControls controls;
@@ -37,6 +38,7 @@ public class PracticeHud
     private GUIStyle backdropStyle;
     private GUIStyle validOutlineStyle;
     private GUIStyle invalidOutlineStyle;
+    private GUIStyle clearProgressStyle;
     private GUIStyle label;
     private bool visible = true;
     private int failures;
@@ -67,7 +69,7 @@ public class PracticeHud
         status = null;
     }
 
-    public void Draw(bool canPractice, bool runValid)
+    public void Draw(bool canPractice, bool runValid, float clearProgress)
     {
         if (disabled || !visible || !canPractice)
             return;
@@ -75,7 +77,7 @@ public class PracticeHud
         try
         {
             EnsureStyle();
-            DrawPanel(runValid);
+            DrawPanel(runValid, clearProgress);
         }
         catch (Exception e)
         {
@@ -90,7 +92,7 @@ public class PracticeHud
         }
     }
 
-    private void DrawPanel(bool runValid)
+    private void DrawPanel(bool runValid, float clearProgress)
     {
         (string Icon, string Action)[] rows = controls.Rows();
         bool hasStatus = HasStatus();
@@ -102,6 +104,9 @@ public class PracticeHud
             contentWidth = Mathf.Max(contentWidth, LineHeight + IconGap + TextWidth(action));
 
         DrawBox(y, contentWidth, contentHeight, runValid);
+
+        if (clearProgress > 0f)
+            GUI.Label(new Rect(PanelX, y + (rows.Length - 1) * LineHeight, contentWidth * clearProgress, LineHeight), string.Empty, clearProgressStyle);
 
         foreach ((string icon, string action) in rows)
             y = Row(y, icon, action);
@@ -158,6 +163,7 @@ public class PracticeHud
         backdropStyle = SolidStyle(BackdropColor);
         validOutlineStyle = SolidStyle(ValidRunColor);
         invalidOutlineStyle = SolidStyle(InvalidRunColor);
+        clearProgressStyle = SolidStyle(ClearProgressColor);
     }
 
     private static GUIStyle SolidStyle(Color color)

@@ -5,6 +5,8 @@ namespace WtcPractice;
 
 public class LevelSession
 {
+    private const float ClearHoldSeconds = 0.5f;
+
     private readonly MelonLogger.Instance logger;
     private readonly LevelWorld world = new();
     private readonly PracticeCamera practiceCamera = new();
@@ -17,6 +19,7 @@ public class LevelSession
 
     private Vector3? pendingWarp;
     private bool canPractice;
+    private float clearHeldSeconds;
 
     public LevelSession(MelonLogger.Instance logger)
     {
@@ -52,6 +55,8 @@ public class LevelSession
         if (controls.NextPressed())
             StepCheckpoint(1);
 
+        UpdateClearHold();
+
         if (controls.FreezePressed())
             ToggleFreeze();
 
@@ -70,7 +75,7 @@ public class LevelSession
 
     public void DrawHud()
     {
-        hud.Draw(canPractice, !RunInvalidated);
+        hud.Draw(canPractice, !RunInvalidated, clearHeldSeconds / ClearHoldSeconds);
     }
 
     public void OnSceneInitialized(string sceneName)
@@ -133,6 +138,23 @@ public class LevelSession
 
         if (TeleportToCurrent())
             SayPosition();
+    }
+
+    private void UpdateClearHold()
+    {
+        if (!canPractice || checkpoints.Count == 0 || !controls.ClearHeld())
+        {
+            clearHeldSeconds = 0f;
+            return;
+        }
+
+        clearHeldSeconds += Time.unscaledDeltaTime;
+        if (clearHeldSeconds < ClearHoldSeconds)
+            return;
+
+        checkpoints.Clear();
+        clearHeldSeconds = 0f;
+        hud.Say("Checkpoints cleared");
     }
 
     private void SayPosition()

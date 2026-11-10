@@ -1,18 +1,17 @@
-# Claude cooked up this script.
-# What it does: Builds the release zip; the mod plus MelonLoader and a portable .NET 6 runtime,
-# But the actual syntax of a powershell script is ungodly.
-# Could have made a .cs script / project myself but would be far more scaffolding than a .ps1 in this case
-
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
     [string] $Configuration = 'Release',
-    [string] $OutDir = (Join-Path $PSScriptRoot 'dist'),
+    [string] $OutDir,
     [switch] $SkipBuild
 )
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+if (-not $OutDir) {
+    $OutDir = Join-Path $PSScriptRoot 'dist'
+}
 
 $MelonLoaderVersion = '0.7.3'
 $MelonLoaderUrl = "https://github.com/LavaGang/MelonLoader/releases/download/v$MelonLoaderVersion/MelonLoader.x64.zip"
@@ -48,7 +47,7 @@ function Get-ModVersion {
 
 function Invoke-ModBuild {
     Write-Host "Building ($Configuration)..."
-    & dotnet build $PSScriptRoot -c $Configuration -v:m
+    & dotnet build (Join-Path $PSScriptRoot 'WtcPractice.csproj') -c $Configuration -v:m
 
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet build failed with exit code $LASTEXITCODE."
@@ -143,7 +142,7 @@ function New-ZipFromDirectory {
 }
 
 $modVersion = Get-ModVersion
-Write-Host "Packing WtcPractice $modVersion" -ForegroundColor Cyan
+Write-Host "Packing WTC Practice $modVersion" -ForegroundColor Cyan
 
 if (-not $SkipBuild) {
     Invoke-ModBuild
@@ -167,7 +166,7 @@ if (-not (Test-Path $OutDir)) {
     New-Item -ItemType Directory -Path $OutDir | Out-Null
 }
 
-$zipPath = Join-Path $OutDir "WtcPractice-$modVersion-win-x64.zip"
+$zipPath = Join-Path $OutDir "WTC-Practice-v$modVersion.zip"
 
 if (Test-Path $zipPath) {
     Remove-Item $zipPath -Force
@@ -176,14 +175,20 @@ if (Test-Path $zipPath) {
 New-ZipFromDirectory -SourceDir $StageDir -DestinationPath $zipPath
 Remove-Item $StageDir -Recurse -Force
 
-$built = Get-Item $zipPath
-$sizeMb = [math]::Round($built.Length / 1MB, 1)
-$sha256 = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
+$dllPath = Join-Path $OutDir 'WtcPractice.dll'
+Copy-Item $ModDll -Destination $dllPath -Force
+
+$builtZip = Get-Item $zipPath
+$builtDll = Get-Item $dllPath
+$zipSizeMb = [math]::Round($builtZip.Length / 1MB, 1)
+$dllSizeKb = [math]::Round($builtDll.Length / 1KB)
 
 Write-Host ""
-Write-Host "Built $($built.Name) ($sizeMb MB)" -ForegroundColor Green
+Write-Host "Built $($builtZip.Name) ($zipSizeMb MB)" -ForegroundColor Green
+Write-Host "Built $($builtDll.Name) ($dllSizeKb KB)" -ForegroundColor Green
 Write-Host ""
 Write-Host "For the release notes:"
-Write-Host "SHA-256: $sha256"
+Write-Host "$($builtZip.Name) SHA-256: $((Get-FileHash -Path $zipPath -Algorithm SHA256).Hash)"
+Write-Host "$($builtDll.Name) SHA-256: $((Get-FileHash -Path $dllPath -Algorithm SHA256).Hash)"
 Write-Host "Bundles stock MelonLoader $MelonLoaderVersion ($MelonLoaderSha256)"
 Write-Host "Bundles stock .NET runtime $RuntimeVersion ($RuntimeSha256)"
